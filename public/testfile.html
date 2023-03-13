@@ -1,0 +1,136 @@
+<head>
+<style>
+#info {
+    position: absolute;
+    top: 0px;
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+    color: #ffff00
+}
+body {
+    overflow: hidden;
+}
+</style>
+</head>
+<body>
+<div id="info">THREE.JS 2D Curve</div>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.min.js"></script>
+<script>
+// open curve issue:
+// http://test2.triait.com/question/Drawing-an-open-arc-with-threejs/
+
+var camera, scene, renderer;
+var mesh, border, angle = 0;
+var mousePoint;
+var mouse = new THREE.Vector2();
+
+init();
+animate();
+
+function init() {
+    scene = new THREE.Scene();
+
+    camera = new THREE.OrthographicCamera(-50, 50, 50, -50, -10, 10);
+    camera.position.z = 10;
+
+    // Create a sine-like wave
+/*
+  var curve = new THREE.SplineCurve([
+    new THREE.Vector2(0,0),
+    new THREE.Vector2(5, 1.5),
+    new THREE.Vector2(10, 10.0),
+    new THREE.Vector2(15, 22.5),
+    new THREE.Vector2(20, 40.0)]);
+    curve.autoClose = false;
+*/
+  var curve = new THREE.CubicBezierCurve(
+	new THREE.Vector3( -10, 0, 0 ),
+	new THREE.Vector3( -5, 15, 0 ),
+	new THREE.Vector3( 20, 15, 0 ),
+	new THREE.Vector3( 10, -10, 0 )
+);
+
+var points = curve.getSpacedPoints( 50 );
+
+var path = new THREE.Path();
+var geometry = path.createGeometry( points );
+
+const texture = new THREE.TextureLoader().load('https://bxkrl.com/maskon-master/public/images/hairstyle.png');
+texture.needsUpdate = true;
+
+var img = new THREE.MeshBasicMaterial({ //CHANGED to MeshBasicMaterial
+  map: texture
+});
+var plane = new THREE.Mesh(geometry, img);
+scene.add(plane);
+
+/*
+  var path = new THREE.Path(curve.getPoints(10));
+	console.log (path);
+  path.splineThru ([new THREE.Vector2(),
+                   new THREE.Vector2 (5,1.5),
+                   new THREE.Vector2 (10,10)]);
+  var geometry = path.createPointsGeometry(15);
+  console.log (geometry.vertices.length)
+  */
+  var material = new THREE.LineBasicMaterial({
+        color: 0xffff00
+    });
+
+      var points = new THREE.Points(geometry, new THREE.PointsMaterial({
+        size: 0.15,
+	color: 0xffffff,
+        map: "transparent"
+      }));
+      scene.add(points);
+
+
+    // Create the final Object3d to add to the scene
+    var splineObject = new THREE.Line(geometry, material);
+    scene.add(splineObject);
+
+    var gridXZ = new THREE.GridHelper(50, 10);
+    gridXZ.setColors(new THREE.Color(0xff00ff), new THREE.Color(0xffffff));
+    gridXZ.rotation.x = Math.PI / 2;
+    scene.add(gridXZ);
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x888888);
+
+    document.body.appendChild(renderer.domElement);
+    window.addEventListener('resize', onWindowResize, false);
+    window.addEventListener('mousedown', onDocumentMouseDown, false);
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onDocumentMouseDown(event) {
+    event.preventDefault();
+    // NDC: [-1,1]x[-1,1]
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    console.log(mouse.x + ', ' + mouse.y);
+
+    if (event.button === 0) { // left button
+        mousePoint.position.set(mouse.x * 50, mouse.y * 50, 0);
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    render();
+}
+
+function render() {
+    renderer.render(scene, camera);
+}
+
+</script>
+</body>

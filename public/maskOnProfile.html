@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"/>
+  <script src="js/face-api.js"></script>
+  <script src="js/commons.js"></script>
+  <script src="js/FileSaver.js"></script>
+  <script src="js/dom-to-image.min.js"></script>
+  <script src="js/faceDetectionControls.js"></script>
+  <script src="js/imageSelectionControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://threejs.org/examples/js/controls/DragControls.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glider-js@1/glider.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/glider-js@1/glider.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/ms-dropdown@4.0.3/dist/css/dd.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ms-dropdown@4.0.3/dist/js/dd.min.js"></script>
+
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.css">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+</head>
+<script>
+
+
+      window.addEventListener('load',function(){
+        document.querySelector('.glider').addEventListener('glider-slide-visible', function(event){
+            var glider = Glider(this);
+            console.log('Slide Visible %s', event.detail.slide)
+        });
+        document.querySelector('.glider').addEventListener('glider-slide-hidden', function(event){
+            console.log('Slide Hidden %s', event.detail.slide)
+        });
+        document.querySelector('.glider').addEventListener('glider-refresh', function(event){
+            console.log('Refresh')
+        });
+        document.querySelector('.glider').addEventListener('glider-loaded', function(event){
+            console.log('Loaded')
+        });
+
+        window._ = new Glider(document.querySelector('.glider'), {
+            slidesToShow: 10, //'auto',
+            slidesToScroll: 1,
+            itemWidth: 50,
+            draggable: false,
+            scrollLock: false,
+            rewind: true
+        });
+      });
+    </script>
+
+<style>
+canvas {
+  /* width: 100%;
+  height: 100%; */
+}
+
+* {
+    box-sizing: border-box
+}
+html, body {
+    width: 100%;
+    overflow: hidden;
+}
+.glider-contain {
+    width: 90%;
+    max-width: 997px;
+    margin: 0 auto;
+}
+.glider-slide {
+    min-width: 80px;
+}
+.glider-slide img {
+    width: 50px;
+}
+</style>
+<body style="text-align:center; width:100%; margin: 0 auto; overflow-x: hidden">
+  <h5>Hairpass Style</h5>
+  <div class="page-container">
+
+
+    <!-- Hairimage selection goes here -->
+    <div style="margin-bottom: 20px;">
+
+
+      <select id="colorchange" class="colorchange" name="colorchange" is="ms-dropdown" data-child-height="315" onchange="changecolor()">
+          <option value="" selected>염색 색상을 선택해주세요.</option>
+          <optgroup label="내추럴 브라운">
+          <option style="background-color: #B17F66; color:white;"  value=#B17F66>내추럴브라운 13-NB</option>
+          <option style="background-color: #A86D4D; color:white;"  value=#A86D4D>내추럴브라운 11-NB</option>
+          <option style="background-color: #9D5638; color:white;"  value=#9D5638>내추럴브라운 9-NB</option>
+          <option style="background-color: #802D01; color:white;"  value=#802D01>내추럴브라운 8-NB</option>
+          <option style="background-color: #4D1B02; color:white;"  value=#4D1B02>내추럴브라운 7-NB</option>
+          <option style="background-color: #2C0F01; color:white;"  value=#2C0F01>내추럴브라운 6-NB</option>
+          <option style="background-color: #1A0901; color:white;"  value=#1A0901>내추럴브라운 5-NB</option>
+          <option style="background-color: #0D0301; color:white;"  value=#0D0301>내추럴브라운 4-NB</option>
+        </optgroup>
+        <optgroup label="웜 브라운">
+          <option style="background-color: #877068; color:white;"  value=#877068>웜브라운 13-WB</option>
+          <option style="background-color: #74594E; color:white;"  value=#74594E>웜브라운 11-WB</option>
+          <option style="background-color: #604035; color:white;"  value=#604035>웜브라운 9-WB</option>
+          <option style="background-color: #391402; color:white;"  value=#391402>웜브라운 8-WB</option>
+          <option style="background-color: #210A02; color:white;"  value=#210A02>웜브라운 7-WB</option>
+          <option style="background-color: #140603; color:white;"  value=#140603>웜브라운 6-WB</option>
+          <option style="background-color: #0C0201; color:white;"  value=#0C0201>웜브라운 5-WB</option>
+        </optgroup>
+        <optgroup label="베이지 브라운">
+          <option style="background-color: #BA9382; color:white;"  value=#BA9382>베이지브라운 13-BB</option>
+          <option style="background-color: #B88977; color:white;"  value=#B88977>베이지브라운 11-BB</option>
+          <option style="background-color: #AB7460; color:white;"  value=#AB7460>베이지브라운 9-BB</option>
+          <option style="background-color: #9C593F; color:white;"  value=#9C593F>베이지브라운 8-BB</option>
+          <option style="background-color: #66412F; color:white;"  value=#66412F>베이지브라운 7-BB</option>
+          <option style="background-color: #3E271F; color:white;"  value=#3E271F>베이지브라운 6-BB</option>
+          <option style="background-color: #211310; color:white;"  value=#211310>베이지브라운 5-BB</option>
+        </optgroup>
+
+        <optgroup label="애쉬 브라운">
+          <option style="background-color: #9D99A8; color:white;" value=#9D99A8>애쉬브라운 13-AB</option>
+          <option style="background-color: #8A8697; color:white;" value=#8A8697>애쉬브라운 11-AB</option>
+          <option style="background-color: #7B7384; color:white;" value=#7B7384>애쉬브라운 9-AB</option>
+          <option style="background-color: #665B7A; color:white;" value=#665B7A>애쉬브라운 8-AB</option>
+          <option style="background-color: #383445; color:white;" value=#383445>애쉬브라운 7-AB</option>
+          <option style="background-color: #201D26; color:white;" value=#201D26>애쉬브라운 6-AB</option>
+          <option style="background-color: #121116; color:white;" value=#121116>애쉬브라운 5-AB</option>
+        </optgroup>
+
+        <optgroup label="매트 브라운">
+          <option style="background-color: #ADAC7E; color:white;" value=#ADAC7E>매트브라운 13-MB</option>
+          <option style="background-color: #9C9B65; color:white;" value=#9C9B65>매트브라운 11-MB</option>
+          <option style="background-color: #93964F; color:white;" value=#93964F>매트브라운 9-MB</option>
+          <option style="background-color: #757326; color:white;" value=#757326>매트브라운 8-MB</option>
+          <option style="background-color: #474A13; color:white;" value=#474A13>매트브라운 7-MB</option>
+          <option style="background-color: #27270D; color:white;" value=#27270D>매트브라운 6-MB</option>
+          <option style="background-color: #181909; color:white;" value=#181909>매트브라운 5-MB</option>
+        </optgroup>
+
+        <optgroup label="골드 브라운">
+          <option style="background-color: #C8B95D; color:white;"  value=#C8B95D>골드브라운 13-GB</option>
+          <option style="background-color: #C7AA47; color:white;"  value=#C7AA47>골드브라운 11-GB</option>
+          <option style="background-color: #B79637; color:white;"  value=#B79637>골드브라운 9-GB</option>
+          <option style="background-color: #AC8312; color:white;"  value=#AC8312>골드브라운 8-GB</option>
+          <option style="background-color: #634F01; color:white;"  value=#634F01>골드브라운 7-GB</option>
+          <option style="background-color: #392B03; color:white;"  value=#392B03>골드브라운 6-GB</option>
+          <option style="background-color: #231804; color:white;"  value=#231804>골드브라운 5-GB</option>
+        </optgroup>
+
+        <optgroup label="로즈 브라운">
+          <option style="background-color: #C18A8D; color:white;" value=#C18A8D>로즈브라운 13-RB</option>
+          <option style="background-color: #BD8284; color:white;" value=#BD8284>로즈브라운 11-RB</option>
+          <option style="background-color: #B1696D; color:white;" value=#B1696D>로즈브라운 9-RB</option>
+          <option style="background-color: #A04147; color:white;" value=#A04147>로즈브라운 8-RB</option>
+          <option style="background-color: #5D2629; color:white;"value=#5D2629>로즈브라운 7-RB</option>
+          <option style="background-color: #361617; color:white;" value=#361617>로즈브라운 6-RB</option>
+          <option style="background-color: #1F0C0E; color:white;" value=#1F0C0E>로즈브라운 5-RB</option>
+        </optgroup>
+
+        <optgroup label="코코아 브라운">
+          <option style="background-color: #827066; color:white;" value=#827066>코코아브라운 13-CoB</option>
+          <option style="background-color: #715C4F; color:white;" value=#715C4F>코코아브라운 11-CoB</option>
+          <option style="background-color: #B1696D; color:white;" value=#B1696D>코코아브라운 9-CoB</option>
+          <option style="background-color: #A04147; color:white;" value=#A04147>코코아브라운 8-CoB</option>
+          <option style="background-color: #5D2629; color:white;" value=#5D2629>코코아브라운 7-CoB</option>
+          <option style="background-color: #361617; color:white;" value=#361617>코코아브라운 6-CoB</option>
+        </optgroup>
+
+        <optgroup label="쿨 브라운">
+          <option style="background-color: #897B72; color:white;" value=#897B72>쿨브라운 13-CB</option>
+          <option style="background-color: #75645A; color:white;" value=#75645A>쿨브라운 11-CB</option>
+          <option style="background-color: #604E44; color:white;" value=#604E44>쿨브라운 9-CB</option>
+          <option style="background-color: #342112; color:white;" value=#342112>쿨브라운 8-CB</option>
+          <option style="background-color: #22140B; color:white;" value=#22140B>쿨브라운 7-CB</option>
+          <option style="background-color: #140B06; color:white;" value=#140B06>쿨브라운 6-CB</option>
+        </optgroup>
+
+        <optgroup label="애쉬">
+          <option style="background-color: #9B8FA7; color:white;" value=#9B8FA7>애쉬 13-10</option>
+          <option style="background-color: #8D809C; color:white;" value=#8D809C>애쉬 11-10</option>
+          <option style="background-color: #7E6D91; color:white;" value=#7E6D91>애쉬 9-10</option>
+          <option style="background-color: #644D79; color:white;" value=#644D79>애쉬 8-10</option>
+          <option style="background-color: #3D2F48; color:white;" value=#3D2F48>애쉬 7-10</option>
+          <option style="background-color: #211A2A; color:white;" value=#211A2A>애쉬 6-10</option>
+        </optgroup>
+
+        <optgroup label="인디고">
+          <option style="background-color: #827F92; color:white;" value=#827F92>인디고 13-12</option>
+          <option style="background-color: #6D6980; color:white;" value=#6D6980>인디고 11-12</option>
+          <option style="background-color: #585274; color:white;" value=#585274>인디고 9-12</option>
+          <option style="background-color: #373153; color:white;" value=#373153>인디고 8-12</option>
+          <option style="background-color: #1B182D; color:white;" value=#1B182D>인디고 7-12</option>
+          <option style="background-color: #100E1A; color:white;" value=#100E1A>인디고 6-12</option>
+        </optgroup>
+
+        <optgroup label="매트">
+          <option style="background-color: #859068; color:white;" value=#859068>매트 13-20</option>
+          <option style="background-color: #717C52; color:white;" value=#717C52>매트 11-20</option>
+          <option style="background-color: #63703A; color:white;" value=#63703A>매트 9-20</option>
+          <option style="background-color: #374709; color:white;" value=#374709>매트 8-20</option>
+          <option style="background-color: #212C04; color:white;" value=#212C04>매트 7-20</option>
+          <option style="background-color: #151A03; color:white;" value=#151A03>매트 6-20</option>
+        </optgroup>
+
+        <optgroup label="올리브">
+          <option style="background-color: #799F7A; color:white;" value=#799F7A>올리브 13-22</option>
+          <option style="background-color: #638D65; color:white;" value=#638D65>올리브 11-22</option>
+          <option style="background-color: #497B4A; color:white;" value=#497B4A>올리브 9-22</option>
+          <option style="background-color: #1D5C1D; color:white;" value=#1D5C1D>올리브 8-22</option>
+          <option style="background-color: #133615; color:white;" value=#133615>올리브 7-22</option>
+          <option style="background-color: #0C240C; color:white;" value=#0C240C>올리브 6-22</option>
+        </optgroup>
+
+        <optgroup label="골드">
+          <option style="background-color: #F4C170; color:white;" value=#F4C170>골드 13-30</option>
+          <option style="background-color: #E9AD55; color:white;" value=#E9AD55>골드 11-30</option>
+          <option style="background-color: #E29D38; color:white;" value=#E29D38>골드 9-30</option>
+          <option style="background-color: #E0972E; color:white;" value=#E0972E>골드 8-30</option>
+          <option style="background-color: #8A590A; color:white;" value=#8A590A>골드 7-30</option>
+        </optgroup>
+
+        <optgroup label="오렌지">
+          <option style="background-color: #EF9C70; color:white;" value=#EF9C70>오렌지 13-40</option>
+          <option style="background-color: #EE8E5B; color:white;" value=#EE8E5B>오렌지 11-40</option>
+          <option style="background-color: #E47840; color:white;" value=#E47840>오렌지 9-40</option>
+          <option style="background-color: #DA530A; color:white;" value=#DA530A>오렌지 8-40</option>
+          <option style="background-color: #84320A; color:white;" value=#84320A>오렌지 7-40</option>
+        </optgroup>
+
+        <optgroup label="카퍼">
+          <option style="background-color: #E07D66; color:white;" value=#E07D66>카퍼 13-45</option>
+          <option style="background-color: #DA684D; color:white;" value=#DA684D>카퍼 11-45</option>
+          <option style="background-color: #DD5035; color:white;" value=#DD5035>카퍼 9-45</option>
+          <option style="background-color: #CB310D; color:white;" value=#CB310D>카퍼 8-45</option>
+          <option style="background-color: #7B1801; color:white;" value=#7B1801>카퍼 7-45</option>
+        </optgroup>
+
+        <optgroup label="버건디레드">
+          <option style="background-color: #D06A75; color:white;" value=#D06A75>버건디레드 13-52</option>
+          <option style="background-color: #C94F5C; color:white;" value=#C94F5C>버건디레드 11-52</option>
+          <option style="background-color: #C23645; color:white;" value=#C23645>버건디레드 9-52</option>
+          <option style="background-color: #B81222; color:white;" value=#B81222>버건디레드 8-52</option>
+          <option style="background-color: #740110; color:white;" value=#740110>버건디레드 7-52</option>
+          <option style="background-color: #3D0208; color:white;" value=#3D0208>버건디레드 6-52</option>
+        </optgroup>
+
+        <optgroup label="핑크">
+          <option style="background-color: #C86884; color:white;" value=#C86884>핑크 13-55</option>
+          <option style="background-color: #BC4D6E; color:white;" value=#BC4D6E>핑크 11-55</option>
+          <option style="background-color: #B4335A; color:white;" value=#B4335A>핑크 9-55</option>
+          <option style="background-color: #A10131; color:white;" value=#A10131>핑크 8-55</option>
+          <option style="background-color: #60021D; color:white;" value=#60021D>핑크 7-55</option>
+          <option style="background-color: #360111; color:white;" value=#360111>핑크 6-55</option>
+        </optgroup>
+
+        <optgroup label="바이올렛">
+          <option style="background-color: #9067A1; color:white;" value=#9067A1>바이올렛 13-60</option>
+          <option style="background-color: #7D4E96; color:white;" value=#7D4E96>바이올렛 11-60</option>
+          <option style="background-color: #6C3588; color:white;" value=#6C3588>바이올렛 9-60</option>
+          <option style="background-color: #480265; color:white;" value=#480265>바이올렛 8-60</option>
+          <option style="background-color: #2A013B; color:white;" value=#2A013B>바이올렛 7-60</option>
+          <option style="background-color: #1A0026; color:white;" value=#1A0026>바이올렛 6-60</option>
+        </optgroup>
+
+        <optgroup label="C컨트롤라인">
+          <option style="background-color: #EDE1CB; color:white;" value=#EDE1CB>라이트너</option>
+          <option style="background-color: #F0DABB; color:white;" value=#F0DABB>클리어</option>
+          <option style="background-color: #999387; color:white;" value=#999387>라이트그레이</option>
+          <option style="background-color: #756B61; color:white;" value=#756B61>그레이</option>
+          <option style="background-color: #3D3935; color:white;" value=#3D3935>다크그레이</option>
+          <option style="background-color: #2F4A8D; color:white;" value=#2F4A8D>블루</option>
+          <option style="background-color: #268C95; color:white;" value=#268C95>스카이블루</option>
+          <option style="background-color: #13782C; color:white;" value=#13782C>그린</option>
+          <option style="background-color: #AAB210; color:white;" value=#AAB210>라임</option>
+          <option style="background-color: #EC6705; color:white;" value=#EC6705>오렌지</option>
+          <option style="background-color: #F30912; color:white;" value=#F30912>스트로베리</option>
+          <option style="background-color: #AE0718; color:white;" value=#AE0718>레드</option>
+          <option style="background-color: #9C002F; color:white;" value=#9C002F>핑크</option>
+          <option style="background-color: #5F1473; color:white;" value=#5F1473>바이올렛</option>
+        </optgroup>
+      </select>
+    </div>
+</div>
+
+
+    <div class="glider-contain">
+      <div class="glider">
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px;"></div>
+        <!-- <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('images/hairstyle.png');" style="width:25px"></div> -->
+      </div>
+
+    </div>
+</div>
+
+    <div class="progress" id="loader">
+      <div class="indeterminate"></div>
+    </div>
+
+
+    <div style="position: relative" class="margin">
+      <div id="widget" style="width: 100%; height: auto; margin-bottom:20px;">
+        <div id="maskdiv" style="width: 100%; margin: auto;"></div>
+        <img id="inputImg" src="" style="width: 75%; height: auto;" />
+      </div>
+
+
+    <!-- <div cl/ass="row" style="text-align:center; margin-bottom:0px;"> -->
+      <!-- <button style="width:49%; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="hair_effects_on();"
+      ><img src="images/hair_cut.png" style="width:70%;"></button>
+      <button style="width:49%;  font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="hair_effects_off();"
+      ><img src="images/hair_cut_end.png" style="width:70%;"></button> -->
+      <!-- <button style="width:24%;   height:80px; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="moveleft_mask();"
+      >&larr;</button>
+      <button style="width:24%;   height:80px; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="moveright_mask();"
+      >&rarr;</button>
+      <button style="width:24%;   height:80px; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="moveup_mask();"
+      >&uarr;</button>
+      <button style="width:24%;   height:80px; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="movedown_mask();"
+      >&darr;</button> -->
+    <!-- </div> -->
+    <br>
+    <div class="left-content" style="text-align:center;">
+      <!-- image_selection_control -->
+      <div class="row side-by-side" style="text-align:center; display:none;">
+        <label for="imgUrlInput">URL로 이미지 로드하기</label>
+        <input id="imgUrlInput" type="text" class="bold">
+      <button
+        class="waves-effect waves-light btn"
+        onclick="loadImageFromUrl(); clearmask();"
+      >Ok</button>
+      <div id="selectList" style='visibility: hidden;'></div>
+    </div>
+      <input style="width:100%;" id="queryImgUploadInput" type="file" class="waves-effect btn bold" onchange="loadImageFromUpload(); clearmask();" accept="image/*;capture=user" />
+      <!-- image_selection_control -->
+    </div>
+    <p style="text-align:center;" >
+    <input style="width:100%; " type="button" id="btnSave" class="waves-effect waves-light btn" value="이미지 저장" onclick="downloadmaskpic();"/>
+  </p>
+
+    <div id="img-out"></div>
+  </div>
+  </body>
+
+  <script>
+    let withBoxes = true
+
+    function onChangeHideBoundingBoxes(e) {
+      withBoxes = !$(e.target).prop('checked')
+      updateResults()
+    }
+
+    async function updateResults() {
+      if (!isFaceDetectionModelLoaded()) {
+        return
+      }
+
+      const inputImgEl = $('#inputImg').get(0)
+      const scale = inputImgEl.width / inputImgEl.naturalWidth
+      const options = getFaceDetectorOptions()
+
+
+      // Attempt to add handleImage
+      const handleImage = (oldImage, newImage) => async () => {
+        const results = await faceapi.detectAllFaces(newImage, options).withFaceLandmarks()
+        // const detection = await faceapi
+        //   .detectSingleFace(inputImgEl, new faceapi.TinyFaceDetectorOptions())
+        //   .withFaceLandmarks(true)
+        // console.log(results)
+        for (let i in results) {
+          const overlayValues = getOverlayValues(results[i])
+          // console.log(overlayValues)
+          // load mask
+
+          //three.js CODE
+
+
+          const maskoverlay = document.createElement("img")
+
+          maskoverlay.src = document.getElementById("mask").src
+          maskoverlay.id = "maskon"
+          maskoverlay.class = "maskon"
+          maskoverlay.width = `${overlayValues.width * scale}`
+          maskoverlay.style.cssText = `
+            position: absolute;
+            left: ${overlayValues.leftOffset * scale}px;
+            top: ${overlayValues.topOffset * scale}px;
+            transform: rotate(${overlayValues.angle}deg);
+            visibility: hidden;
+          `
+          // if (document.getElementById("maskon")) {
+          //   document.getElementById("maskon").remove()
+          // }
+          var item = document.getElementById("maskdiv");
+          item.appendChild(maskoverlay)
+
+
+          // const maskoverlay2 = document.createElement("canvas")
+          // maskoverlay2.src = document.getElementById("mask").src
+          // maskoverlay2.id = "maskoncanvas"
+          // maskoverlay2.class = "maskoncanvas"
+          // maskoverlay2.width = `${overlayValues.width * scale}`
+          // maskoverlay2.style.cssText = `
+          //   position: absolute;
+          //   left: ${overlayValues.leftOffset * scale}px;
+          //   top: ${overlayValues.topOffset * scale}px;
+          //   transform: rotate(${overlayValues.angle}deg);
+          // `
+          // if (document.getElementById("maskon")) {
+          //   document.getElementById("maskon").remove()
+          // }
+          // var item2 = document.getElementById("maskdiv");
+          // item2.appendChild(maskoverlay2)
+
+
+          if (document.getElementById("maskon")) {
+
+          }
+
+        }
+
+
+      }
+
+      const image = new Image();
+      image.crossOrigin = "Anonymous";
+      image.addEventListener("load", handleImage(inputImgEl, image));
+      image.src = inputImgEl.src;
+
+
+
+
+
+
+
+      // const canvas = $('#widget').get(0)
+      // faceapi.matchDimensions(canvas, inputImgEl)
+      // const resizedResults = faceapi.resizeResults(results, inputImgEl)
+      //
+      // if (withBoxes) {
+      //   faceapi.draw.drawDetections(canvas, resizedResults)
+      // }
+      // faceapi.draw.drawFaceLandmarks(canvas, resizedResults)
+    }
+
+
+
+    async function run() {
+      // load face detection and face landmark models
+      await changeFaceDetector(SSD_MOBILENETV1)
+      await faceapi.loadFaceLandmarkModel('/')
+      await faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+      await faceapi.nets.faceLandmark68TinyNet.loadFromUri("/models"),
+
+      // start processing image
+      updateResults()
+
+    }
+
+    $(document).ready(function() {
+      initImageSelectionControls()
+      initFaceDetectionControls()
+      run()
+    })
+
+
+
+  </script>
+
+  <script>
+
+  var haircolor = 0x9c8af5;
+  var img;
+  var points;
+  var point_source;
+  const getOverlayValues = result => {
+    landmarks = result.landmarks
+    boundingbox = result.alignedRect._box
+
+    const nose = landmarks.getNose()
+    const jawline = landmarks.getJawOutline()
+
+    const jawLeft = jawline[0]
+    const jawRight = jawline.splice(-1)[0]
+    const adjacent = jawRight.x - jawLeft.x
+    const opposite = jawRight.y - jawLeft.y
+    // const jawLength = Math.sqrt(Math.pow(adjacent, 2) + Math.pow(opposite, 2))
+    const jawLength = boundingbox._width
+
+    // Both of these work. The chat believes atan2 is better.
+    // I don't know why. (It doesn’t break if we divide by zero.)
+    // const angle = Math.round(Math.tan(opposite / adjacent) * 100)
+    const angle = Math.atan2(opposite, adjacent) * (180 / Math.PI)
+    const width = jawLength*2.0
+
+
+    return {
+      width,
+      angle,
+      leftOffset: nose[8].x - width/3.2 ,//jawLeft.x - jawLength*.09,
+      // leftOffset: nose[7].x + width*0.02 ,//jawLeft.x - jawLength*.09,
+      topOffset: nose[0].y - width*0.55,
+    }
+  }
+  function clearmask() {
+    const myNode = document.getElementById("maskdiv");
+    while (myNode.lastElementChild) {
+      myNode.removeChild(myNode.lastElementChild);
+    }
+  };
+
+  function changecolor() {
+    var ch_color = document.getElementById("colorchange");
+    var colorvalue = ch_color.options[colorchange.selectedIndex].value;
+    haircolor = parseInt ( colorvalue.replace("#","0x"), 16 );
+    console.log(haircolor);
+
+    img.color.set(haircolor);
+
+  };
+
+  function hair_effects_on() {
+    console.log("size_on");
+
+    points.color.set("yellow");
+    points.size.set(0.35);
+
+  };
+
+  function hair_effects_off() {
+    console.log("size_off");
+    // points.size.set("0");
+    // points.color.set("transparent");
+    points.point_source.color.set("transparent");
+    point_source.color.set("transparent");
+  };
+
+  function changemask(new_img_src) {
+    const myNode = document.getElementById("maskdiv").children;
+    for (var i = 0; i < myNode.length; i++) {
+      var tableChild = myNode[i];
+      // Do stuff
+      tableChild.src = new_img_src;
+
+      if (document.getElementById("maskoncanvas")) {
+        document.getElementById("maskoncanvas").remove()
+      }
+
+      var cavimagesrc = document.getElementById("maskon");
+      var cavimagewidth = $(cavimagesrc).width();
+      var cavimageheight = $(cavimagesrc).height();
+      var cavstyle = getComputedStyle(cavimagesrc);
+
+      var maskoverlay2 = document.createElement("canvas")
+      maskoverlay2.src = document.getElementById("mask").src
+      maskoverlay2.id = "maskoncanvas"
+      maskoverlay2.class = "maskoncanvas"
+      maskoverlay2.width = cavimagewidth
+      maskoverlay2.height = cavimageheight
+      maskoverlay2.style.cssText = `
+        position: absolute;
+        left: ${cavstyle.left};
+        top: ${cavstyle.top};
+        transform: ${cavstyle.transform};
+      `
+
+      var item2 = document.getElementById("maskdiv");
+      item2.appendChild(maskoverlay2)
+
+      var cavimagesrc2 = document.getElementById("maskon").src;
+      // const canvas = document.getElementById('maskon');
+      // const ca_width = $(canvas).width();
+      // const ca_height = $(canvas).height();
+
+
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(75, cavimagewidth / cavimageheight, 0.1, 1000);
+      // var camera = new THREE.PerspectiveCamera(70, ca_width / ca_height, 1, 1000);
+
+      var renderer = new THREE.WebGLRenderer({
+      canvas: document.querySelector('canvas'),
+      antialias: true,
+      preserveDrawingBuffer: true,
+      alpha: true
+      });
+
+      // class CustomSinCurve extends THREE.Curve {
+      //     constructor( scale = 1 ) {
+      //         super();
+      //         this.scale = scale;
+      //     }
+      //     getPoint( t, optionalTarget = new THREE.Vector3() ) {
+      //         let tx = t * 3 - 1.5,
+      //         ty = Math.sin( 24 * Math.PI * t ) * 0.5,
+      //         tz = Math.cos( 24 * Math.PI * t ) * 0.25;
+      //         return optionalTarget.set( tx, ty, tz ).multiplyScalar( this.scale );
+      //     }
+      // };
+
+
+      camera.position.set(0, 10, 0);
+      // camera.position.z = 400;
+      camera.lookAt(scene.position);
+
+
+      // let curve = new THREE.EllipseCurve(0, 0, 7, 5);
+
+      var geometry = new THREE.PlaneBufferGeometry(10, 13, 5, 6);
+      geometry.rotateX(-Math.PI * 0.5);
+
+
+      const texture = new THREE.TextureLoader().load(cavimagesrc2);
+      texture.needsUpdate = true;
+
+      img = new THREE.MeshBasicMaterial({ //CHANGED to MeshBasicMaterial
+        map: texture
+      });
+
+
+      var plane = new THREE.Mesh(geometry, img);
+      scene.add(plane);
+
+
+      point_source = new THREE.PointsMaterial({
+        size: 0.45,
+        color: "yellow"
+      });
+
+      points = new THREE.Points(geometry, point_source);
+      scene.add(points);
+
+      // const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+      // const line = new THREE.Line(geometry, material);
+      //
+      // scene.add(line);
+
+
+      // img.map.needsUpdate = true; //ADDED
+
+      var raycaster = new THREE.Raycaster();
+      raycaster.params.Points.threshold = 0.25;
+      var mouse = new THREE.Vector2();
+      var intersects = null;
+      var plane = new THREE.Plane();
+      var planeNormal = new THREE.Vector3();
+      var currentIndex = null;
+      var planePoint = new THREE.Vector3();
+      // var curve = new THREE.LineCurve3( planeNormal, planePoint);
+      // var v3Array = curve.getPoints(20);
+      // geometry.setFromPoints(v3Array);
+      var dragging = false;
+      let isPress = false,   // 마우스를 눌렀을 때
+          prevPosX = 0,      // 이전에 위치한 X값
+          prevPosY = 0;      // 이전에 위치한 Y값
+
+
+      window.addEventListener("touchstart", mouseDown, false);
+      window.addEventListener("touchmove", mouseMove, false);
+      window.addEventListener("touchend", mouseUp, false);
+
+
+      function mouseDown(event) {
+        if(event.touches.length >= 2){
+
+          prevPosX = event.touches[0].clientX;
+          prevPosY = event.touches[0].clientY;
+
+          isPress = true;
+
+        }else{
+
+          prev_one_PosX = event.touches[0].clientX;
+            console.log("[main] : [handleStart] : [ID] : " + prev_one_PosX);
+
+          prev_one_PosY = event.touches[0].clientY;
+            console.log("[main] : [handleStart] : [ID] : " + prev_one_PosY);
+
+          setRaycaster(event);
+          getIndex();
+          dragging = true;
+        }
+      }
+
+      // function touchStart(event) {
+      //   console.log("");
+      //   console.log("[main] : [handleStart] : [start]");
+      //   BodyScrollDisAble();
+      //
+      //   setRaycaster(event);
+      //   getIndex();
+      //   dragging = true;
+      //   var startId = event.targetTouches[0].target.id;
+      //   console.log("[main] : [handleStart] : [ID] : " + startId);
+      // }
+
+      function mouseMove(event) {
+                  BodyScrollDisAble();
+        if(event.touches.length >= 2){
+
+
+          const myNode = document.getElementById("maskdiv").children;
+          // 이전 좌표와 현재 좌표 차이값
+          const posX = prevPosX - event.touches[0].clientX;
+          const posY = prevPosY - event.touches[0].clientY;
+
+          // 현재 좌표가 이전 좌표로 바뀜
+          prevPosX = event.touches[0].clientX;
+          prevPosY = event.touches[0].clientY;
+
+          // left, top으로 이동
+
+          var rotation = event.rotation;
+
+          for (var i = 0; i < myNode.length; i++) {
+            var tableChild = myNode[i];
+            // Do stuff
+            var top = parseFloat(tableChild.style.top)-posY;
+            tableChild.style.top = `${top}px`;
+
+            var left = parseFloat(tableChild.style.left)-posX;
+            tableChild.style.left = `${left}px`;
+
+            if ( ! rotation) {
+                 rotation = Math.atan2(event.touches[0].pageY - event.touches[1].pageY,
+                       event.touches[0].pageX - event.touches[1].pageX) * 180 / Math.PI;
+            }
+            tableChild.style.transform = "rotate(" + rotation + "deg)";
+
+
+          };
+
+          // tableChild.style.left = (tableChild.style.left - posX) + "px";
+          // tableChild.style.top = (tableChild.style.top - posY) + "px";
+
+        }else{
+          if (dragging && currentIndex !== null) {
+            // event.preventDefault();
+
+            const posX_one = prevPosX - event.touches[0].clientX;
+            const posY_one = prevPosY - event.touches[0].clientY;
+            prev_one_PosX = event.touches[0].clientX;
+            prev_one_PosY = event.touches[0].clientY;
+
+            setRaycaster(event);
+            raycaster.ray.intersectPlane(plane, planePoint);
+            geometry.attributes.position.setXYZ(currentIndex, planePoint.x, planePoint.y, planePoint.z);
+
+
+
+            geometry.attributes.position.needsUpdate = true;
+          }
+        }
+      }
+
+
+
+      function mouseUp(event) {
+        isPress = false;
+
+        dragging = false;
+        currentIndex = null;
+      }
+
+
+
+      function BodyScrollDisAble(){
+        document.body.style.overflow = "hidden";
+      }
+
+      function BodyScrollAble(){
+        document.body.style.overflow = "auto";
+      }
+
+      function getIndex() {
+        intersects = raycaster.intersectObject(points);
+        // console.log("[intersects] : [getIndex] : " + intersects);
+
+        if (intersects.length === 0) {
+          currentIndex = null;
+          // console.log("[intersects] : [length] : " + intersects.length);
+          return;
+        }
+        currentIndex = intersects[0].index;
+        setPlane(intersects[0].point);
+      }
+
+      function setPlane(point) {
+        planeNormal.subVectors(camera.position, point).normalize();
+        plane.setFromNormalAndCoplanarPoint(planeNormal, point);
+      }
+
+      function setRaycaster(event) {
+        // getMouse(event);
+        // var touch = event.touches[0];
+        //
+        // // mouse.x = event.clientX;
+        // // mouse.y = event.clientY;
+        //
+
+        // var cavimagesrc = document.getElementById("maskon");
+        // var cavimagewidth = $(cavimagesrc).width();
+        // var cavimageheight = $(cavimagesrc).height()
+        // touch.x = (touch.clientX / cavimagewidth) * 2 - 1;
+        // touch.y = -(touch.clientY / cavimageheight) * 2 + 1;
+
+        var cavimagesrc = document.getElementById("maskon");
+        var touch = event.touches[0];
+
+        // event.preventDefault();
+        var rect = cavimagesrc.getBoundingClientRect();
+        // console.log(rect);
+        mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+      }
+
+      function getMouse(event) {
+        // mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        // mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        var cavimagesrc = document.getElementById("maskon");
+
+        // event.preventDefault();
+        var rect = cavimagesrc.getBoundingClientRect();
+        // console.log(rect);
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        // var touch = event.touches[0];
+        //
+        // // mouse.x = event.clientX;
+        // // mouse.y = event.clientY;
+        //
+        // touch.x = (touch.clientX / window.innerWidth) * 2 - 1;
+        // touch.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+
+      }
+
+      render();
+
+      function render() {
+        requestAnimationFrame(render);
+        renderer.render(scene, camera);
+      }
+
+      function resizeCanvasToDisplaySize() {
+        // you must pass false here or three.js sadly fights the browser
+        renderer.setSize(cavimagewidth, cavimageheight, false);
+        camera.aspect = cavimagewidth / cavimageheight;
+        camera.updateProjectionMatrix();
+
+        // set render target sizes here
+      }
+
+
+      const resizeObserver = new ResizeObserver(resizeCanvasToDisplaySize);
+      resizeObserver.observe(renderer.domElement, {
+        box: 'content-box'
+      });
+
+    };
+  };
+
+  function sleep(milliseconds) {
+    const date = Date.now();
+    let currentDate = null;
+    do {
+      currentDate = Date.now();
+    } while (currentDate - date < milliseconds);
+  }
+
+  // function downloadmaskpic() {
+  //   domtoimage.toJpeg(document.getElementById('widget'), { quality: 1.00 })
+  //       .then(function (dataUrl) {
+  //           var link = document.createElement('a');
+  //           link.download = 'hairpass-save-profile.jpeg';
+  //           link.href = dataUrl;
+  //           link.click();
+  //       });
+  // };
+
+  function downloadmaskpic(){
+    html2canvas(document.getElementById('widget')).then(function(canvas){
+      var myImage = canvas.toDataURL();
+      downloadURI(myImage, "hairpass-save-profile.png")
+    });
+  }
+
+  function downloadURI(uri, name){
+    var link = document.createElement('a')
+    link.download = name;
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+  }
+
+  function zoomin_mask() {
+    const myNode = document.getElementById("maskon").children;
+    for (var i = 0; i < myNode.length; i++) {
+      var tableChild = myNode[i];
+      // Do stuff
+      tableChild.width = tableChild.width*1.05;
+    };
+  }
+
+  function zoomout_mask() {
+    const myNode = document.getElementById("maskdiv").children;
+    for (var i = 0; i < myNode.length; i++) {
+      var tableChild = myNode[i];
+      // Do stuff
+      tableChild.width = tableChild.width*0.95;
+    };
+  }
+
+  function moveleft_mask() {
+    const myNode = document.getElementById("maskdiv").children;
+    for (var i = 0; i < myNode.length; i++) {
+      var tableChild = myNode[i];
+      // Do stuff
+      var left = parseFloat(tableChild.style.left)-2;
+      tableChild.style.left = `${left}px`;
+    };
+  }
+
+  function moveright_mask() {
+    const myNode = document.getElementById("maskdiv").children;
+    for (var i = 0; i < myNode.length; i++) {
+      var tableChild = myNode[i];
+      // Do stuff
+      var left = parseFloat(tableChild.style.left)+2;
+      console.log(left);
+      tableChild.style.left = `${left}px`;
+    };
+  }
+
+  function moveup_mask() {
+    const myNode = document.getElementById("maskdiv").children;
+    for (var i = 0; i < myNode.length; i++) {
+      var tableChild = myNode[i];
+      // Do stuff
+      var top = parseFloat(tableChild.style.top)-2;
+      tableChild.style.top = `${top}px`;
+    };
+  }
+
+  function movedown_mask() {
+    const myNode = document.getElementById("maskdiv").children;
+    for (var i = 0; i < myNode.length; i++) {
+      var tableChild = myNode[i];
+      // Do stuff
+      var top = parseFloat(tableChild.style.top)+2;
+      tableChild.style.top = `${top}px`;
+    };
+  }
+
+  </script>
+
+
+</body>
+</html>
