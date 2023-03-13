@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <script src="https://bxkrl.com/spine-runtimes/spine-ts/spine-webgl/dist/iife/spine-webgl.js"></script>
+  <script type="text/javascript" src="https://cdnjs.com/libraries/hammer.js"> </script>
+
+
+
+
+  <script>
+  var spineDemos = {
+     HOVER_COLOR_INNER: new spine.Color(0, 0, 0, 0.0),
+     HOVER_COLOR_OUTER: new spine.Color(0, 0, 0, 0.0),
+     NON_HOVER_COLOR_INNER: new spine.Color(0, 0, 0, 0.0),
+     NON_HOVER_COLOR_OUTER: new spine.Color(0, 0, 0, 0.0),
+     demos: [],
+     loopRunning: false,
+     canvases: [],
+     downloader: new spine.Downloader(),
+     path: "assets/"
+  };
+
+
+  (function () {
+     var timeKeeper = new spine.TimeKeeper();
+     function loop() {
+        timeKeeper.update();
+        if (spineDemos.log) console.log(timeKeeper.delta + ", " + timeKeeper.framesPerSecond);
+        requestAnimationFrame(loop);
+        var demos = spineDemos.demos;
+        for (var i = 0; i < demos.length; i++) {
+           var demo = demos[i];
+           checkElementVisible(demo);
+           renderDemo(demo);
+        }
+     }
+
+     function renderDemo(demo) {
+        if (demo.visible) {
+           var canvas = demo.canvas;
+
+           if (canvas.parentElement != demo.placeholder) {
+              $(canvas).detach();
+              demo.placeholder.appendChild(canvas);
+           }
+           let complete = demo.assetManager.isLoadingComplete();
+           if (complete) {
+              if (!demo.loaded) {
+                 demo.loaded = true;
+                 demo.loadingComplete();
+              }
+              if (spineDemos.log) console.log("Rendering: " + canvas.id);
+              demo.render();
+           }
+           // demo.loadingScreen.draw(complete);
+        }
+     }
+
+     function checkElementVisible(demo) {
+        const rect = demo.placeholder.getBoundingClientRect();
+        const windowHeight = (window.innerHeight || document.documentElement.clientHeight);
+        const windowWidth = (window.innerWidth || document.documentElement.clientWidth);
+        const vertInView = (rect.top <= windowHeight * 1.1) && ((rect.top + rect.height) >= windowHeight * -0.1);
+        const horInView = (rect.left <= windowWidth * 1.1) && ((rect.left + rect.width) >= windowWidth * -0.1);
+
+        demo.visible = (vertInView && horInView);
+     }
+
+     function createCanvases() {
+           var canvas = document.createElement("canvas");
+
+           canvas.width = 0; canvas.height = 0;
+           // canvas.context = new spine.ManagedWebGLRenderingContext(canvas, { alpha: true });
+           canvas.context = new spine.ManagedWebGLRenderingContext(canvas, { alpha: true, premultipliedAlpha: false });
+           canvas.id = "canvas";
+           // canvas.style.cssText = `
+           //   position: absolute;
+           //   visibility:hidden;`
+           spineDemos.canvases.push(canvas);
+     }
+
+     spineDemos.init = function () {
+        var numCanvases = 5;
+        var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        var isAndroid = navigator.userAgent.toLowerCase().indexOf("android") > -1;
+        if (isFirefox && isAndroid) numCanvases = 2;
+        createCanvases();
+
+        requestAnimationFrame(loop);
+
+     }
+
+     spineDemos.addDemo = function (demo, placeholder) {
+        var canvas = spineDemos.canvases[spineDemos.demos.length % spineDemos.canvases.length];
+        demo(canvas);
+        demo.placeholder = placeholder;
+        demo.canvas = canvas;
+        demo.visible = false;
+        var renderer = new spine.SceneRenderer(canvas, canvas.context.gl);
+        // demo.loadingScreen = new spine.LoadingScreen(renderer);
+
+        $(window).on('DOMContentLoaded load resize scroll', function () {
+           checkElementVisible(demo);
+           renderDemo(demo);
+        });
+        checkElementVisible(demo);
+        spineDemos.demos.push(demo);
+     }
+
+     var coords = new spine.Vector3();
+     var mouse = new spine.Vector3();
+     spineDemos.closest = function (canvas, renderer, skeleton, controlBones, hoverTargets, x, y) {
+        mouse.set(x, canvas.clientHeight - y, 0)
+        var bestDistance = 50, index = 0;
+        var best;
+        for (var i = 0; i < controlBones.length; i++) {
+           hoverTargets[i] = null;
+           let bone = skeleton.findBone(controlBones[i]);
+           var position = new spine.Vector2(bone.length, 0);
+           bone.localToWorld(position);
+           let distance = renderer.camera.worldToScreen(
+              coords.set(bone.worldX, bone.worldY, 0),
+              canvas.clientWidth, canvas.clientHeight).distance(mouse);
+           if (distance < bestDistance) {
+              bestDistance = distance;
+              best = bone;
+              index = i;
+           }
+        }
+        if (best) hoverTargets[index] = best;
+        return best;
+     };
+
+     var position = new spine.Vector3();
+     spineDemos.dragged = function (canvas, renderer, target, x, y) {
+        if (target) {
+           x = spine.MathUtils.clamp(x, 0, canvas.clientWidth)
+           y = spine.MathUtils.clamp(y, 0, canvas.clientHeight);
+           renderer.camera.screenToWorld(coords.set(x, y, 0), canvas.clientWidth, canvas.clientHeight);
+           if (target.parent !== null) {
+              target.parent.worldToLocal(position.set(coords.x, coords.y));
+              target.x = position.x;
+              target.y = position.y;
+           } else {
+              target.x = coords.x;
+              target.y = coords.y;
+           }
+        }
+     };
+
+
+  })();
+  spineDemos.init();
+
+  </script>
+
+  <script src="js/hair_1.js"></script>
+  <script src="js/hair_2.js"></script>
+  <link rel="stylesheet" href="demos.css">
+  <script src="js/face-api.js"></script>
+  <script src="js/commons.js"></script>
+  <script src="js/FileSaver.js"></script>
+  <script src="js/dom-to-image.min.js"></script>
+  <script src="js/faceDetectionControls.js"></script>
+  <script src="js/imageSelectionControls.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glider-js@1/glider.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/glider-js@1/glider.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/ms-dropdown@4.0.3/dist/css/dd.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ms-dropdown@4.0.3/dist/js/dd.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.css">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/spectrum-colorpicker2/dist/spectrum.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/spectrum-colorpicker2/dist/spectrum.min.css">
+
+</head>
+<script>
+
+
+      window.addEventListener('load',function(){
+        document.querySelector('.glider').addEventListener('glider-slide-visible', function(event){
+            var glider = Glider(this);
+        });
+        document.querySelector('.glider').addEventListener('glider-slide-hidden', function(event){
+        });
+        document.querySelector('.glider').addEventListener('glider-refresh', function(event){
+        });
+        document.querySelector('.glider').addEventListener('glider-loaded', function(event){
+        });
+
+        window._ = new Glider(document.querySelector('.glider'), {
+            slidesToShow: 10, //'auto',
+            slidesToScroll: 1,
+            itemWidth: 20,
+            draggable: false,
+            scrollLock: false,
+            rewind: true
+        });
+      });
+    </script>
+
+
+<style>
+canvas {
+
+}
+
+* {
+    box-sizing: border-box
+}
+html, body {
+    width: 100%;
+
+}
+.glider-contain {
+    width: 90%;
+    margin: 0 auto;
+}
+.glider-slide {
+    min-width: 80px;
+}
+.glider-slide img {
+    width: 50px;
+}
+</style>
+<body style="text-align:center; width:100%; margin: 0 auto; overflow-x: hidden">
+
+
+
+
+
+<ul class="collapsible" id="collapsible" style="background:white; " >
+  <li style="background:white;">
+    <div class="collapsible-header">
+      <i class="material-icons" style="color:pink;">wc</i>
+
+      <div class="glider">
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('1');" style="width:30px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('2');" style="width:30px"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('3');" style="width:30px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('4');" style="width:30px"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('5');" style="width:30px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('6');" style="width:30px"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('7');" style="width:30px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('8');" style="width:30px"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('9');" style="width:30px;"></div>
+        <div> <img src="images/hairstyle.png" id="mask" onclick="changemask('10');" style="width:30px"></div>
+      </div>
+    <div class="collapsible-body">
+
+    </div>
+  </li>
+  <li style="background:white;">
+    <div class="collapsible-header" >
+      <i class="material-icons" style="color:darkblue;">wc</i>
+      <span style="color:darkblue;">
+      이미지 준비중</span>
+      <!-- <span class="badge">0</span></div> -->
+    <div class="collapsible-body">
+      <!-- <p>이미지 준비중 입니다.</p> -->
+    </div>
+  </li>
+
+  <li style="background:white;">
+    <div class="collapsible-header">
+      <i class="material-icons">filter_drama</i>
+      염색
+    <!-- </div> -->
+<!-- <input id="color-picker" value='#000000' onchange="changecolor()" /> -->
+  </li>
+
+  <!-- <li>
+    <div class="collapsible-header">
+      <i class="material-icons">filter_drama</i>
+      악세서리(안경 등)
+      <span class="badge">1</span></div>
+    <div class="collapsible-body"><p>이미지 준비중 입니다.</p></div>
+  </li> -->
+</ul>
+
+
+
+
+    <div class="progress" id="loader">
+      <div class="indeterminate"></div>
+    </div>
+
+
+    <div style="position: relative" class="margin">
+      <div id="widget" style="width: 100%; height: auto; margin-bottom:20px;">
+        <div id="maskdiv" style="width: 100%; margin: auto;" class="aspect">
+        </div>
+        <img id="inputImg" src="" style="width: 70%; height: auto;" />
+      </div>
+
+
+    <!-- <div cl/ass="row" style="text-align:center; margin-bottom:0px;"> -->
+      <!-- <button style="width:49%; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="hair_effects_on();"
+      ><img src="images/hair_cut.png" style="width:70%;"></button>
+      <button style="width:49%;  font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="hair_effects_off();"
+      ><img src="images/hair_cut_end.png" style="width:70%;"></button> -->
+      <!-- <button style="width:24%;   height:80px; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="moveleft_mask();"
+      >&larr;</button>
+      <button style="width:24%;   height:80px; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="moveright_mask();"
+      >&rarr;</button>
+      <button style="width:24%;   height:80px; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="moveup_mask();"
+      >&uarr;</button>
+      <button style="width:24%;   height:80px; font-weight:bold; font-size:25px;"
+        class="waves-effect waves-light btn"
+        onclick="movedown_mask();"
+      >&darr;</button> -->
+    <!-- </div> -->
+    <br>
+    <div class="left-content" style="text-align:center;">
+      <!-- image_selection_control -->
+      <div class="row side-by-side" style="text-align:center; display:none;">
+        <label for="imgUrlInput">URL로 이미지 로드하기</label>
+        <input id="imgUrlInput" type="text" class="bold">
+      <button
+        class="waves-effect waves-light btn"
+        onclick="loadImageFromUrl(); clearmask();"
+      >Ok</button>
+      <div id="selectList" style='visibility: hidden;'></div>
+    </div>
+      <!-- image_selection_control -->
+    </div>
+    <p style="text-align:center; position:fixed; bottom: 0;" >
+
+
+<input style="margin-top:10px;" id="queryImgUploadInput" type="file" class="btn waves-effect waves-light red lighten-2 btn-large" onchange="loadImageFromUpload(); clearmask();" accept="image/*;capture=user" />
+
+  </p>
+  <div class="fixed-action-btn">
+<a class="btn-floating btn-large red">
+<i class="large material-icons">download</i>
+</a>
+<ul>
+
+<li><a class="btn-floating blue" onclick="downloadmaskpic();"><i class="material-icons">archive</i></a></li>
+</ul>
+</div>
+    <div id="img-out"></div>
+  </div>
+
+  <script>
+
+
+
+  </script>
+
+
+  </body>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('.fixed-action-btn');
+
+  });
+
+
+    let withBoxes = true
+
+    function onChangeHideBoundingBoxes(e) {
+      withBoxes = !$(e.target).prop('checked')
+      updateResults()
+    }
+
+    async function updateResults() {
+      if (!isFaceDetectionModelLoaded()) {
+        return
+      }
+
+      const inputImgEl = $('#inputImg').get(0)
+      const scale = inputImgEl.width / inputImgEl.naturalWidth
+      const options = getFaceDetectorOptions()
+
+
+      // Attempt to add handleImage
+      const handleImage = (oldImage, newImage) => async () => {
+        const results = await faceapi.detectAllFaces(newImage, options).withFaceLandmarks()
+        // const detection = await faceapi
+        //   .detectSingleFace(inputImgEl, new faceapi.TinyFaceDetectorOptions())
+        //   .withFaceLandmarks(true)
+        // console.log(results)
+        for (let i in results) {
+          const overlayValues = getOverlayValues(results[i])
+          // console.log(overlayValues)
+          // load mask
+
+          const maskoverlay = document.createElement("img")
+
+          maskoverlay.src = document.getElementById("mask").src
+          maskoverlay.id = "maskon"
+          maskoverlay.class = "maskon"
+          maskoverlay.width = `${overlayValues.width * scale}`
+          maskoverlay.style.cssText = `
+            position: absolute;
+            left: ${overlayValues.leftOffset * scale}px;
+            top: ${overlayValues.topOffset * scale}px;
+            transform: rotate(${overlayValues.angle}deg);
+            visibility: hidden;
+          `
+          var item = document.getElementById("maskdiv");
+          item.appendChild(maskoverlay)
+
+
+        }
+
+
+      }
+
+      const image = new Image();
+      image.crossOrigin = "Anonymous";
+      image.addEventListener("load", handleImage(inputImgEl, image));
+      image.src = inputImgEl.src;
+
+
+
+
+
+
+
+      // const canvas = $('#widget').get(0)
+      // faceapi.matchDimensions(canvas, inputImgEl)
+      // const resizedResults = faceapi.resizeResults(results, inputImgEl)
+      //
+      // if (withBoxes) {
+      //   faceapi.draw.drawDetections(canvas, resizedResults)
+      // }
+      // faceapi.draw.drawFaceLandmarks(canvas, resizedResults)
+    }
+
+
+
+    async function run() {
+      // load face detection and face landmark models
+      await changeFaceDetector(SSD_MOBILENETV1)
+      await faceapi.loadFaceLandmarkModel('/')
+      await faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+      await faceapi.nets.faceLandmark68TinyNet.loadFromUri("/models"),
+
+      // start processing image
+      updateResults()
+
+    }
+
+    $(document).ready(function() {
+      initImageSelectionControls()
+      initFaceDetectionControls()
+      run()
+    })
+
+
+
+  </script>
+
+
+  <script>
+
+  const getOverlayValues = result => {
+    landmarks = result.landmarks
+    boundingbox = result.alignedRect._box
+
+    const nose = landmarks.getNose()
+    const jawline = landmarks.getJawOutline()
+
+    const jawLeft = jawline[0]
+    const jawRight = jawline.splice(-1)[0]
+    const adjacent = jawRight.x - jawLeft.x
+    const opposite = jawRight.y - jawLeft.y
+    // const jawLength = Math.sqrt(Math.pow(adjacent, 2) + Math.pow(opposite, 2))
+    const jawLength = boundingbox._width
+
+    // Both of these work. The chat believes atan2 is better.
+    // I don't know why. (It doesn’t break if we divide by zero.)
+    // const angle = Math.round(Math.tan(opposite / adjacent) * 100)
+    const angle = Math.atan2(opposite, adjacent) * (180 / Math.PI)
+    const width = jawLength*2.0
+
+
+    return {
+      width,
+      angle,
+      leftOffset: nose[0].x - width/2.0 ,//jawLeft.x - jawLength*.09,
+      // leftOffset: nose[7].x + width*0.02 ,//jawLeft.x - jawLength*.09,
+      topOffset: nose[0].y - width*0.55,
+    }
+  }
+  function clearmask() {
+    const myNode = document.getElementById("maskdiv");
+    while (myNode.lastElementChild) {
+      myNode.removeChild(myNode.lastElementChild);
+    }
+  };
+
+  // function changecolor() {
+  //   var ch_color = document.getElementById("colorchange");
+  //   var colorvalue = ch_color.options[colorchange.selectedIndex].value;
+  //   haircolor = parseInt ( colorvalue.replace("#","0x"), 16 );
+  //
+  //   img.color.set(haircolor);
+  //
+  // };
+
+
+  function changemask(new_img_src) {
+    const myNode = document.getElementById("maskdiv").children;
+    for (var i = 0; i < myNode.length; i++) {
+      var tableChild = myNode[i];
+      // Do stuff
+      tableChild.src = new_img_src;
+
+      if (document.getElementById("maskoncanvas")) {
+        document.getElementById("maskoncanvas").remove()
+      }
+
+
+      var cavimagesrc = document.getElementById("maskon");
+      var cavimagewidth = $(cavimagesrc).width();
+      var cavimageheight = $(cavimagesrc).height();
+      var cavstyle = getComputedStyle(cavimagesrc);
+
+      console.log("imgsrc_: " +new_img_src);
+
+      if(new_img_src == '1'){
+        spineDemos.addDemo(vineDemo, document.getElementsByClassName("aspect")[0]);
+      }else{
+        spineDemos.addDemo(vineDemo2, document.getElementsByClassName("aspect")[0]);
+      }
+
+
+
+      var maskoverlay2 = document.querySelector("canvas");
+
+
+      maskoverlay2.style.width = cavimagewidth+'px';
+      maskoverlay2.style.height = cavimageheight+'px';
+      maskoverlay2.style.cssText = `
+        position: absolute;
+        left: ${cavstyle.left};
+        top: ${cavstyle.top};
+        transform: ${cavstyle.transform};
+      `
+
+      document.body.addEventListener('touchmove', function(event) {
+        event.preventDefault();
+      }, false);
+      let stage = document.querySelector("canvas");
+
+      let mc = new Hammer.Manager(stage);
+      let pan = new Hammer.Pan({pointers: 2});
+      let rotate = new Hammer.Rotate();
+      let pinch = new Hammer.Pinch();
+
+      mc.add([pan, pinch, rotate]);
+      mc.get('pinch').set({ enable: true });
+      mc.get('rotate').set({ enable: true });
+
+      let adjustDeltaX = 0;
+      let adjustDeltaY = 0;
+      let adjustScale = 1;
+      let adjustRotation = 0;
+
+      let currentDeltaX = null;
+      let currentDeltaY = null;
+      let currentScale = null;
+      let currentRotation = null;
+
+      mc.on("panstart pinchstart rotatestart", function(e) {
+        adjustRotation -= e.rotation;
+      });
+
+      mc.on("panmove pinchmove rotatemove", function(e) {
+        currentRotation = adjustRotation + e.rotation;
+        currentScale = adjustScale * e.scale;
+        currentDeltaX = adjustDeltaX + (e.deltaX / currentScale);
+        currentDeltaY = adjustDeltaY + (e.deltaY / currentScale);
+
+        let transforms = ['scale(' + currentScale + ')'];
+        transforms.push('translate(' + currentDeltaX + 'px,' + currentDeltaY + 'px)');
+        transforms.push('rotate(' + Math.round(currentRotation) + 'deg)');
+        stage.style.transform = transforms.join(' ');
+      });
+
+      mc.on("panend pinchend rotateend", function(e) {
+        adjustScale = currentScale;
+        adjustRotation = currentRotation;
+        adjustDeltaX = currentDeltaX;
+        adjustDeltaY = currentDeltaY;
+      });
+
+    };
+  };
+
+  function sleep(milliseconds) {
+    const date = Date.now();
+    let currentDate = null;
+    do {
+      currentDate = Date.now();
+    } while (currentDate - date < milliseconds);
+  }
+
+  // function downloadmaskpic() {
+  //   domtoimage.toJpeg(document.getElementById('widget'), { quality: 1.00 })
+  //       .then(function (dataUrl) {
+  //           var link = document.createElement('a');
+  //           link.download = 'hairpass-save-profile.jpeg';
+  //           link.href = dataUrl;
+  //           link.click();
+  //       });
+  // };
+
+  function downloadmaskpic(){
+    html2canvas(document.getElementById('widget')).then(function(canvas){
+      var myImage = canvas.toDataURL();
+      downloadURI(myImage, "hairpass-save-profile.png")
+    });
+  }
+
+  function downloadURI(uri, name){
+    var link = document.createElement('a')
+    link.download = name;
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+  }
+
+  </script>
+
+
+</body>
+</html>
